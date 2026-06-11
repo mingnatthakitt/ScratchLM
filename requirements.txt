@@ -3,5 +3,5 @@ uvicorn[standard]>=0.27.0
 gradio>=4.36.0
 huggingface_hub==0.19.4
 requests>=2.31.0
-docling>=2.0.0
+docling
 python-multipart>=0.0.9
