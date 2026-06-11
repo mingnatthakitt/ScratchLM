@@ -18,7 +18,7 @@
 **Zero-DB AI Study Assistant** - Upload PDFs, extract content, and get AI-powered cheatsheets and interactive tutoring.
 
 <p align="center">
-  <!-- screenshot coming soon -->
+  <img src="screenshot.png" width="70%" />
 </p>
 
 ## ✨ Key Features
