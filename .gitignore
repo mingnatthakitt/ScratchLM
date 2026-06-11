@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+._*
+droid-wiki/
+.claude/
+screenshot.png
