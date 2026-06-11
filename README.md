@@ -18,17 +18,15 @@
 **Zero-DB AI Study Assistant** - Upload PDFs, extract content, and get AI-powered cheatsheets and interactive tutoring.
 
 <p align="center">
-  <img src="screenshot.png" width="80%" alt="Preview" />
+  <!-- screenshot coming soon -->
 </p>
 
 ## ✨ Key Features
 
-### 📄 Local Document Processing
-- **Drag & Drop Upload**: Upload multiple documents directly in your browser
-- **OCR Support**: Built-in OCR for scanned and image-based PDFs
-- **Markdown Export**: Extracts structured text (headings, tables, lists) as Markdown
-- **Multi-Format Support**: PDF, DOCX, PPTX, XLSX, HTML, and image files (PNG, JPG, TIFF)
-- **Multi-Document Support**: Process multiple documents simultaneously with clear demarcation
+### 📄 Local PDF Processing
+- **Drag & Drop Upload**: Upload multiple PDFs directly in your browser
+- **Local Extraction**: Text extraction happens entirely on the server
+- **Multi-Document Support**: Process multiple PDFs simultaneously with clear demarcation
 
 ### 📚 AI-Powered Cheatsheet Generator
 - **4-Zone Structure**: Automatically generates comprehensive study guides:
@@ -58,10 +56,10 @@ The app uses **Gemma 4 31B Instruction-Tuned** model via Google AI Studio API fo
 - Multi-step problem solving
 - Conceptual teaching with analogies
 
-### PDF Processing: Docling
-- **OCR for scanned PDFs**: Built-in optical character recognition for scanned/image documents
-- **Structure preservation**: Exports to Markdown preserving headings, tables, and lists
-- **Pure Python**: No external services or cloud dependencies
+### PDF Processing: pypdf
+- Pure Python PDF text extraction
+- No external services or cloud dependencies
+- Preserves document structure and page breaks
 
 ---
 
@@ -72,7 +70,7 @@ The app uses **Gemma 4 31B Instruction-Tuned** model via Google AI Studio API fo
 | Web Framework | FastAPI |
 | Frontend | Vanilla HTML/CSS/JS |
 | AI Model | Gemma 4 31B IT |
-| Document Parsing | Docling (PDF, DOCX, PPTX, XLSX, HTML, images) |
+| PDF Parsing | pypdf |
 | Markdown Rendering | marked.js |
 
 ---

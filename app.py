@@ -4,10 +4,11 @@ FastAPI + Pure HTML/JS frontend with dark theme
 """
 
 import os
+import io
 import requests
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
-from docling.document_converter import DocumentConverter
+from pypdf import PdfReader
 
 # ============================================================================
 # Configuration
@@ -48,28 +49,13 @@ def generate_content(prompt: str, context: str = "") -> str:
         return f"Error: {e}"
 
 
-def parse_document(file_bytes: bytes, filename: str) -> str:
-    """Extract text from documents using docling (PDF, DOCX, PPTX, XLSX, HTML, images, etc.)."""
-    import tempfile, os
-    ext = os.path.splitext(filename)[1].lower()
-    suffix_map = {
-        ".pdf": ".pdf", ".docx": ".docx", ".pptx": ".pptx",
-        ".xlsx": ".xlsx", ".html": ".html", ".htm": ".html",
-        ".png": ".png", ".jpg": ".jpg", ".jpeg": ".jpeg", ".tiff": ".tiff",
-    }
-    suffix = suffix_map.get(ext, ".bin")
+def parse_pdf(file_bytes: bytes) -> str:
+    """Extract text from PDF using pypdf."""
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-            tmp.write(file_bytes)
-            tmp_path = tmp.name
-        try:
-            converter = DocumentConverter()
-            result = converter.convert(tmp_path)
-            return result.document.export_to_markdown()
-        finally:
-            os.unlink(tmp_path)
+        reader = PdfReader(io.BytesIO(file_bytes))
+        return "\n".join(p.extract_text() or "" for p in reader.pages)
     except Exception as e:
-        return f"[Error parsing {filename}: {e}]"
+        return f"[PDF error: {e}]"
 
 
 # ============================================================================
@@ -249,10 +235,10 @@ async def root():
         <div class="main-grid">
             <aside>
                 <div class="panel">
-                    <div class="panel-title">📁 Upload Documents</div>
+                    <div class="panel-title">📁 Upload PDFs</div>
                     <div class="upload-area" id="upload-area">
-                        <input type="file" id="file-input" accept=".pdf,.docx,.pptx,.xlsx,.html,.htm,.png,.jpg,.jpeg,.tiff" multiple>
-                        <p>📄 Drop documents or click to browse</p>
+                        <input type="file" id="file-input" accept=".pdf" multiple>
+                        <p>📄 Drop PDFs or click to browse</p>
                         <p id="file-count" style="margin-top: 10px; font-size: 0.9rem; color: #6e7681;"></p>
                     </div>
                     <button class="btn" id="extract-btn" disabled>⚡ Extract</button>
@@ -331,7 +317,7 @@ async def root():
         uploadArea.addEventListener('drop', e => {
             e.preventDefault();
             uploadArea.style.borderColor = '#30363d';
-            files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|docx|pptx|xlsx|html?|png|jpe?g|tiff?)$/i.test(f.name));
+            files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
             updateUI();
         });
         fileInput.addEventListener('change', () => {
@@ -470,7 +456,7 @@ async def extract_files(files: list[UploadFile] = File(...)):
     consolidated, full_text = [], ""
     
     for i, file in enumerate(files):
-        text = parse_document(await file.read(), file.filename)
+        text = parse_pdf(await file.read()) if file.filename.lower().endswith('.pdf') else f"[Unsupported: {file.filename}]"
         header = f"\n=== DOCUMENT {i+1}: {file.filename} ===\n"
         consolidated.append(header + text)
         full_text += header + text + "\n"
