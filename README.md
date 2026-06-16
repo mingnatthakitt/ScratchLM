@@ -34,9 +34,9 @@
   - **Zone B**: Real-World Analogies
   - **Zone C**: Worked Problems
   - **Zone D**: Exam Traps & Strategy
-- **Markdown Export**: Download cheatsheets as `.md` files for Obsidian, Notion, or any笔记 app
+- **Markdown Export**: Download cheatsheets as `.md` files for Obsidian, Notion, or any app
 
-### 💬 RAG Chat with Full Context
+### 💬 AI Chat with Full Context
 - **Document-Aware**: Chat remembers everything from your uploaded PDFs
 - **Conversation History**: Multi-turn dialogues with context retention
 - **Step-by-Step Teaching**: AI tutor explains concepts rather than just answering
