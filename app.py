@@ -467,7 +467,7 @@ async def root():
 
         uploadArea.addEventListener('click', () => fileInput.click());
         uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#58a6ff'; });
-        uploadArea.addEventListener('dragleave', () => uploadArea.style.borderColor = '#30363d'; });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#30363d'; });
         uploadArea.addEventListener('drop', e => {
             e.preventDefault();
             uploadArea.style.borderColor = '#30363d';
