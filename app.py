@@ -91,16 +91,27 @@ def _generate_nemotron_with_retry(prompt: str, document_bytes: bytes = None, doc
 
     # Build message content
     if document_bytes:
-        # Multimodal: send document as base64
-        b64_data = base64.b64encode(document_bytes).decode("utf-8")
-        mime_type = "application/pdf" if document_type == "pdf" else f"image/{document_type}"
-        content = [
-            {"type": "text", "text": prompt},
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:{mime_type};base64,{b64_data}"},
-            },
-        ]
+        # Try to extract text from PDF using pypdf (built-in OCR-like extraction)
+        # This lets Nemotron's language understanding work on the text directly
+        extracted_text = ""
+        if document_type == "pdf":
+            try:
+                reader = PdfReader(io.BytesIO(document_bytes))
+                extracted_text = "\n".join(p.extract_text() or "" for p in reader.pages)
+            except Exception:
+                pass
+
+        if extracted_text and len(extracted_text.strip()) > 100:
+            # Send extracted text as context — more reliable than PDF-as-image
+            content = [{"type": "text", "text": f"{prompt}\n\n=== DOCUMENT CONTENT ===\n{extracted_text}"}]
+        else:
+            # Fallback: try sending as base64 image for actual image files
+            b64_data = base64.b64encode(document_bytes).decode("utf-8")
+            mime_type = f"image/{document_type}" if document_type not in ("pdf", "doc", "docx") else "application/octet-stream"
+            content = [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_data}"}},
+            ]
     else:
         content = [{"type": "text", "text": prompt}]
 
