@@ -14,7 +14,7 @@
   <br/>
 </div>
 
-**Zero-DB AI Study Assistant** — Choose your model, upload documents, and get AI-powered cheatsheets and interactive tutoring.
+**Zero-DB AI Study Assistant** — Choose your model, upload PDFs, and get AI-powered cheatsheets and interactive tutoring.
 
 <p align="center">
   <img src="screenshot.png" width="70%" />
@@ -23,15 +23,15 @@
 ## ✨ Key Features
 
 ### 🤖 Dual Model Support
-- **gemma-4-31b-it** via Google AI Studio — reliable, text-based extraction
-- **nvidia/nemotron-3-nano-omni-30b-a3b-reasoning** via NVIDIA NIM — multimodal, processes raw documents directly (PDF, images, docs)
+- **`gemma-4-31b-it`** via Google AI Studio — fast, text-based
+- **`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`** via NVIDIA NIM — multimodal, PDF rendered as images
 - Automatic fallback: if Nemotron fails, gracefully switches to Gemma
 
-### 📄 Local PDF Processing
-- **Drag & Drop Upload**: Upload multiple documents directly in your browser
-- **Local Extraction**: Text extraction happens entirely on the server (Gemma path)
-- **Native Document Processing**: Nemotron reads documents directly — no extraction step needed
-- **Multi-Document Support**: Process multiple PDFs simultaneously with clear demarcation
+### 📄 PDF Processing
+- **Drag & Drop Upload**: Upload PDFs directly in your browser
+- **Gemma path**: PDF → pypdf text extraction → text sent to model
+- **Nemotron path**: PDF → PyMuPDF renders each page as PNG image → sent to model as image content blocks
+- **Multi-Page Support**: All pages rendered and sent for full document understanding
 
 ### 📚 AI-Powered Cheatsheet Generator
 - **4-Zone Structure**: Automatically generates comprehensive study guides:
@@ -42,7 +42,7 @@
 - **Markdown Export**: Download cheatsheets as `.md` files for Obsidian, Notion, or any app
 
 ### 💬 AI Chat with Full Context
-- **Document-Aware**: Chat remembers everything from your uploaded documents
+- **Document-Aware**: Chat remembers everything from your uploaded PDFs
 - **Conversation History**: Multi-turn dialogues with context retention
 - **Step-by-Step Teaching**: AI tutor explains concepts rather than just answering
 
@@ -58,17 +58,13 @@
 ### Model Selection
 The app ships with two model options, selectable via the UI:
 
-| Model | Provider | Endpoint | Strengths |
-|-------|----------|----------|-----------|
-| `gemma-4-31b-it` | Google AI Studio | OpenAI SDK compatible | Fast, reliable text extraction |
-| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | NVIDIA NIM | OpenAI SDK compatible | Multimodal — raw document understanding |
-
-### PDF Processing
-- **Gemma path**: pypdf text extraction → text sent to model
-- **Nemotron path**: Raw document bytes (PDF/image/doc) sent directly to model as multimodal input — no extraction needed
+| Model | Provider | Document Processing |
+|-------|----------|-------------------|
+| `gemma-4-31b-it` | Google AI Studio | PDF → pypdf text extraction → text |
+| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | NVIDIA NIM | PDF → PNG images (150 DPI) → multimodal |
 
 ### Retry & Fallback
-Nemotron calls retry up to 2 times with a 2-second delay on failure. If all retries fail, the request automatically falls back to Gemma with no data loss.
+Nemotron calls retry up to 2 times with a 2-second delay on failure. If all retries fail, the request automatically falls back to Gemma — no data loss.
 
 ---
 
@@ -80,7 +76,8 @@ Nemotron calls retry up to 2 times with a 2-second delay on failure. If all retr
 | Frontend | Vanilla HTML/CSS/JS |
 | AI Models | Gemma 4 31B IT (Google AI Studio) + Nemotron 3 Nano (NVIDIA NIM) |
 | SDK | OpenAI Python SDK (both endpoints are OpenAI-compatible) |
-| PDF Parsing | pypdf |
+| PDF Text Extraction | pypdf |
+| PDF Image Rendering | PyMuPDF (fitz) |
 | Markdown Rendering | marked.js |
 
 ---
@@ -135,20 +132,19 @@ Nemotron calls retry up to 2 times with a 2-second delay on failure. If all retr
 ## 📖 How to Use
 
 ### Step 1: Select a Model
-Use the dropdown in the sidebar to choose between:
-- **Gemma 4** — text extraction + generation (PDF only)
-- **Nemotron 3** — raw document understanding (PDF, images, docs)
+Use the dropdown in the sidebar to choose:
+- **Gemma 4** — text-based extraction, good for fast responses
+- **Nemotron 3** — renders PDF pages as images for full document understanding
 
-### Step 2: Upload Documents
-Drag and drop files onto the upload area, or click to browse. Nemotron supports PDF, images (jpg, png, gif, webp), and docs (doc, docx).
+### Step 2: Upload PDF
+Drag and drop a PDF onto the upload area, or click to browse.
 
-### Step 3: Extract or Skip
-- **Gemma**: Click **⚡ Extract** to process documents with pypdf
-- **Nemotron**: No extraction needed — click **⚡ Extract** to ready files directly
+### Step 3: Extract
+Click **⚡ Extract** to process the document. For Gemma, text is extracted. For Nemotron, pages are rendered as images.
 
 ### Step 4: Generate Cheatsheet or Chat
-- **✨ Generate**: Create a 4-zone study guide from your documents
-- **💬 Chat**: Ask questions about your documents with full context awareness
+- **✨ Generate**: Create a 4-zone study guide from your PDF
+- **💬 Chat**: Ask questions about your PDF with full context awareness
 - **📥 Download .md**: Save the cheatsheet as a Markdown file
 
 ---
