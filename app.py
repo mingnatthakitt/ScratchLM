@@ -12,6 +12,7 @@ from openai import OpenAI
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from pypdf import PdfReader
+import fitz  # PyMuPDF for PDF → image rendering
 
 # ============================================================================
 # Configuration
@@ -91,26 +92,34 @@ def _generate_nemotron_with_retry(prompt: str, document_bytes: bytes = None, doc
 
     # Build message content
     if document_bytes:
-        # Try to extract text from PDF using pypdf (built-in OCR-like extraction)
-        # This lets Nemotron's language understanding work on the text directly
-        extracted_text = ""
         if document_type == "pdf":
-            try:
-                reader = PdfReader(io.BytesIO(document_bytes))
-                extracted_text = "\n".join(p.extract_text() or "" for p in reader.pages)
-            except Exception:
-                pass
-
-        if extracted_text and len(extracted_text.strip()) > 100:
-            # Send extracted text as context — more reliable than PDF-as-image
-            content = [{"type": "text", "text": f"{prompt}\n\n=== DOCUMENT CONTENT ===\n{extracted_text}"}]
+            # Render PDF pages as PNG images for multimodal understanding
+            page_images = pdf_to_images(document_bytes, dpi=150)
+            if page_images:
+                content = [{"type": "text", "text": prompt}]
+                for img_bytes in page_images:
+                    b64_data = base64.b64encode(img_bytes).decode("utf-8")
+                    content.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{b64_data}"},
+                    })
+            else:
+                # Fallback: try pypdf text extraction
+                try:
+                    reader = PdfReader(io.BytesIO(document_bytes))
+                    text = "\n".join(p.extract_text() or "" for p in reader.pages)
+                    if text.strip():
+                        content = [{"type": "text", "text": f"{prompt}\n\n=== DOCUMENT CONTENT ===\n{text}"}]
+                    else:
+                        content = [{"type": "text", "text": prompt}]
+                except Exception:
+                    content = [{"type": "text", "text": prompt}]
         else:
-            # Fallback: try sending as base64 image for actual image files
+            # Non-PDF files: send as base64 image
             b64_data = base64.b64encode(document_bytes).decode("utf-8")
-            mime_type = f"image/{document_type}" if document_type not in ("pdf", "doc", "docx") else "application/octet-stream"
             content = [
                 {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_data}"}},
+                {"type": "image_url", "image_url": {"url": f"data:image/{document_type};base64,{b64_data}"}},
             ]
     else:
         content = [{"type": "text", "text": prompt}]
@@ -150,6 +159,24 @@ def _generate_nemotron_with_retry(prompt: str, document_bytes: bytes = None, doc
 
     # All retries failed — fallback to Gemma
     return f"[NVIDIA Nemotron failed after {retries + 1} attempts: {last_error}] ", True, fallback_context
+
+
+def pdf_to_images(document_bytes: bytes, dpi: int = 150) -> list[bytes]:
+    """Render PDF pages as PNG images using PyMuPDF. Returns list of PNG byte arrays."""
+    images = []
+    try:
+        doc = fitz.open(stream=document_bytes, filetype="pdf")
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            # Render at specified DPI
+            mat = fitz.Matrix(dpi / 72, dpi / 72)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+            img_bytes = pix.tobytes("png")
+            images.append(img_bytes)
+        doc.close()
+    except Exception as e:
+        pass  # Return empty list on failure
+    return images
 
 
 def _generate_nemotron(prompt: str, context: str = "", document_bytes: bytes = None, document_type: str = "pdf") -> str:
@@ -449,14 +476,17 @@ async def root():
             selectedModel = e.target.value;
             const info = document.getElementById('model-info');
             const hint = document.getElementById('upload-hint');
+            const fileInput = document.getElementById('file-input');
 
             if (selectedModel === 'nemotron') {
                 info.innerHTML = 'Model: <code>nvidia/nemotron-3-nano-omni-30b-a3b-reasoning</code> <span class="model-badge nemotron">NVIDIA NIM</span>';
-                hint.textContent = 'PDF, images, docs supported — no extraction needed';
+                hint.textContent = 'PDF only — rendered as images for the model';
+                fileInput.accept = '.pdf';
                 document.getElementById('extract-btn').disabled = files.length === 0;
             } else {
                 info.innerHTML = 'Model: <code>gemma-4-31b-it</code> <span class="model-badge gemma">Google AI Studio</span>';
                 hint.textContent = '';
+                fileInput.accept = '.pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx';
                 document.getElementById('extract-btn').disabled = files.length === 0;
             }
         });

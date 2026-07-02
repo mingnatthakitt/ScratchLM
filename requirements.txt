@@ -6,3 +6,4 @@ requests
 pypdf>=4.0.0
 python-multipart
 openai
+PyMuPDF>=1.24.0
